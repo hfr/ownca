@@ -429,8 +429,6 @@ class CertificateAuthority:
     :type ca_storage: str, required when there is no CA
     :param common_name: Common Name for CA
     :type common_name: str, required when there is no CA
-    :param dns_names: List of DNS names
-    :type dns_names: list of strings, optional
     :param intermediate: Intermediate Certificate Authority mode
     :type intermediate: bool, default False
     :param oids: CA Object Identifiers (OIDs). The are typically seen
@@ -730,22 +728,17 @@ class CertificateAuthority:
     def initialize(
         self,
         common_name=None,
-        dns_names=None,
-        uris=None,
         intermediate=False,
         maximum_days=825,
         public_exponent=65537,
         key_size=2048,
+        **san_names,
     ):
         """
         Initialize the Certificate Authority (CA)
 
         :param common_name: CA Common Name (CN)
         :type common_name: str, required
-        :param dns_names: List of DNS names
-        :type dns_names: list of strings, optional
-        :param uris: List of URIs
-        :type uris: list of strings, optional
         :param maximum_days: Certificate maximum days duration
         :type maximum_days: int, default: 825
         :param public_exponent: Public Exponent
@@ -796,9 +789,8 @@ class CertificateAuthority:
                 csr = issue_csr(
                     key=key.key,
                     common_name=common_name,
-                    dns_names=dns_names,
-                    uris=uris,
                     oids=self.oids,
+                    **san_names,
                 )
                 csr_bytes = csr.public_bytes(
                     encoding=serialization.Encoding.PEM
@@ -829,8 +821,7 @@ class CertificateAuthority:
                 key=key.key,
                 pem_public_key=key.public_key,
                 common_name=common_name,
-                dns_names=dns_names,
-                uris=uris,
+                **san_names,
             )
 
             if not certificate:
@@ -878,12 +869,11 @@ class CertificateAuthority:
         hostname,
         maximum_days=825,
         common_name=None,
-        dns_names=None,
-        uris=None
         oids=None,
         public_exponent=65537,
         key_size=2048,
         ca=True,
+        **san_names,
     ):
         """
         Issues a new certificate signed by the CA
@@ -894,10 +884,6 @@ class CertificateAuthority:
         :type maximum_days: int, default: 825
         :param common_name: Common Name (CN) when loading existent certificate
         :type common_name: str, optional
-        :param dns_names: List of DNS names
-        :type dns_names: list of strings, optional
-        :param uris: List of URIs
-        :type uris: list of strings, optional
         :param oids: CA Object Identifiers (OIDs). The are typically seen
             in X.509 names.
             Allowed keys/values:
@@ -971,10 +957,9 @@ class CertificateAuthority:
             csr = issue_csr(
                 key=key_data.key,
                 common_name=common_name,
-                dns_names=dns_names,
-                uris=uris,
                 oids=oids,
                 ca=ca,
+                **san_names,
             )
 
             store_file(
