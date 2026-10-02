@@ -731,6 +731,7 @@ class CertificateAuthority:
         self,
         common_name=None,
         dns_names=None,
+        uris=None,
         intermediate=False,
         maximum_days=825,
         public_exponent=65537,
@@ -743,6 +744,8 @@ class CertificateAuthority:
         :type common_name: str, required
         :param dns_names: List of DNS names
         :type dns_names: list of strings, optional
+        :param uris: List of URIs
+        :type uris: list of strings, optional
         :param maximum_days: Certificate maximum days duration
         :type maximum_days: int, default: 825
         :param public_exponent: Public Exponent
@@ -794,6 +797,7 @@ class CertificateAuthority:
                     key=key.key,
                     common_name=common_name,
                     dns_names=dns_names,
+                    uris=uris,
                     oids=self.oids,
                 )
                 csr_bytes = csr.public_bytes(
@@ -826,6 +830,7 @@ class CertificateAuthority:
                 pem_public_key=key.public_key,
                 common_name=common_name,
                 dns_names=dns_names,
+                uris=uris,
             )
 
             if not certificate:
@@ -874,6 +879,7 @@ class CertificateAuthority:
         maximum_days=825,
         common_name=None,
         dns_names=None,
+        uris=None
         oids=None,
         public_exponent=65537,
         key_size=2048,
@@ -890,6 +896,8 @@ class CertificateAuthority:
         :type common_name: str, optional
         :param dns_names: List of DNS names
         :type dns_names: list of strings, optional
+        :param uris: List of URIs
+        :type uris: list of strings, optional
         :param oids: CA Object Identifiers (OIDs). The are typically seen
             in X.509 names.
             Allowed keys/values:
@@ -964,6 +972,7 @@ class CertificateAuthority:
                 key=key_data.key,
                 common_name=common_name,
                 dns_names=dns_names,
+                uris=uris,
                 oids=oids,
                 ca=ca,
             )
