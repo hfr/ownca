@@ -8,6 +8,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.oid import NameOID
+from ‎ipaddress import _BaseAddress as IPAddress
 import datetime
 import uuid
 
@@ -50,10 +51,25 @@ def _valid_csr(csr):
     else:
         return None
 
+SANs = {
+    "dns_names": (x509.DNSName, str),
+    "uris": (x509.UniformResourceIdentifier, str),
+    "dir_names": (x509.DirectoryName, x509.Name),
+    "rfc_names": (x509.RFC822Name, str),
+    "ip_addrs": (x509.IPAddress, ‎IPAddress),
+    "reg_ids": (x509.RegisteredID, x509.ObjectIdentifier),
+    "others": (x509.OtherName, tuple, (x509.ObjectIdentifier, bytes)),
+}
 
-def _add_dns_as_subjectaltname(builder, c_name, dns_names):
+def is_instance_pat(x, t):
+    return isinstance(x, t) if isinstance(t, type) \
+        else (isinstance(x, tuple) and len(x) == len(t) and 
+        all(is_instance_pat(a, b) for a, b in zip(x, t))
+    )
+
+def _add_as_subjectaltname(builder, c_name, **altnames):
     """
-    Add DNS Name (``cryptography.x509.DNSName``) and Subject Alternative
+    Add SANs as Subject Alternative
     Name (``cryptography.x509.SubjectAlternativeName``) to the certificate
     object.
 
@@ -64,31 +80,34 @@ def _add_dns_as_subjectaltname(builder, c_name, dns_names):
 
     :return: builder object ``x509.CertificateBuilder()``
     """
+    x509_names = []
 
-    if dns_names is not None:
+    for kind, items  in altnames.items():
+        if not items:
+            continue
 
-        if type(dns_names) is not list:
-            raise TypeError("dns_names require a list of strings.")
+        if kind not in SANs:
+            raise ValueError(f"{kind} is not supported as SAN entry.")
 
-        if len(dns_names) != 0:
-            if all(isinstance(item, str) for item in dns_names):
-                x509_dns_names = []
-                for dns_name in dns_names:
-                    x509_dns_names.append(x509.DNSName(dns_name))
+        if isinstance(items, SANs[kind][1]):
+            items = [items]
+        elif not isinstance(items, list):
+            raise TypeError(f"{kind} requires a {SANs[kind][1]} or a list of {SANs[kind][1]}.")
 
-                builder = builder.add_extension(
-                    x509.SubjectAlternativeName(x509_dns_names),
-                    critical=False,
-                )
-
-            else:
-                raise TypeError("All DNS Names must to be string values.")
-
-    else:
-        builder = builder.add_extension(
-            x509.SubjectAlternativeName([x509.DNSName(c_name)]),
-            critical=False,
-        )
+        if all(is_instance_pat(item, 
+            SANs[kind][2] if SANs[kind][1] is tuple else SANs[kind][1]) for item in items):
+                for item in items:
+                    x509_names.append(SANs[kind][0](*item if item is tuple else item))
+        else:
+            raise TypeError(f"All {kind} must be {SANs[kind][1]}.")
+    
+    if not x509_names:
+        x509_names.append(x509.DNSName(c_name))
+   
+    builder = builder.add_extension(
+        x509.SubjectAlternativeName(x509_names),
+        critical=False,
+    )
 
     return builder
 
@@ -122,6 +141,7 @@ def issue_cert(
     pem_public_key=None,
     ca_common_name=None,
     common_name=None,
+    uris=None,
     dns_names=None,
     host=False,
     ca=True,
@@ -145,6 +165,8 @@ def issue_cert(
     :type common_name: string, optional.
     :param dns_names: list of DNS names to the cert.
     :type dns_names: list of strings.
+    :param uris: list of URIs.
+    :type uris: list of strings.    
     :param host: Issuing a host certificate.
     :type host: bool, default True.
     :param ca: Certificate is CA or not.
@@ -170,8 +192,8 @@ def issue_cert(
             )
         )
 
-        builder = _add_dns_as_subjectaltname(
-            builder, ca_common_name, dns_names
+        builder = _add_as_subjectaltname(
+            builder, ca_common_name, dns_names, uris
         )
 
     else:
@@ -180,7 +202,7 @@ def issue_cert(
             x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
         )
 
-        builder = _add_dns_as_subjectaltname(builder, common_name, dns_names)
+        builder = _add_as_subjectaltname(builder, common_name, dns_names, uris)
 
     builder = builder.not_valid_before(datetime.datetime.today() - one_day)
     builder = builder.not_valid_after(
@@ -225,8 +247,8 @@ def issue_csr(key=None, common_name=None, dns_names=None, oids=None, ca=True):
     oids.append(x509.NameAttribute(NameOID.COMMON_NAME, common_name))
     csr_builder = csr_builder.subject_name(x509.Name(oids))
 
-    csr_builder = _add_dns_as_subjectaltname(
-        csr_builder, common_name, dns_names
+    csr_builder = _add_as_subjectaltname(
+        csr_builder, common_name, dns_names, uris
     )
 
     csr_builder = csr_builder.add_extension(
