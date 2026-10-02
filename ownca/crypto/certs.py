@@ -141,10 +141,9 @@ def issue_cert(
     pem_public_key=None,
     ca_common_name=None,
     common_name=None,
-    uris=None,
-    dns_names=None,
     host=False,
     ca=True,
+    **altnames,
 ):
     """
     Issue a new certificate
@@ -163,10 +162,6 @@ def issue_cert(
     :type ca_common_name: string, optional.
     :param common_name: Common Name when issuing Certificate Authority cert.
     :type common_name: string, optional.
-    :param dns_names: list of DNS names to the cert.
-    :type dns_names: list of strings.
-    :param uris: list of URIs.
-    :type uris: list of strings.    
     :param host: Issuing a host certificate.
     :type host: bool, default True.
     :param ca: Certificate is CA or not.
@@ -193,7 +188,7 @@ def issue_cert(
         )
 
         builder = _add_as_subjectaltname(
-            builder, ca_common_name, dns_names, uris
+            builder, ca_common_name, **altnames
         )
 
     else:
@@ -202,7 +197,7 @@ def issue_cert(
             x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
         )
 
-        builder = _add_as_subjectaltname(builder, common_name, dns_names, uris)
+        builder = _add_as_subjectaltname(builder, common_name, **altnames)
 
     builder = builder.not_valid_before(datetime.datetime.today() - one_day)
     builder = builder.not_valid_after(
@@ -222,7 +217,7 @@ def issue_cert(
     return _valid_cert(certificate)
 
 
-def issue_csr(key=None, common_name=None, dns_names=None, oids=None, ca=True):
+def issue_csr(key=None, common_name=None, ca=True, **altnames):
     """
     Issue a new CSR (Certificate Signing Request)
 
@@ -230,8 +225,6 @@ def issue_csr(key=None, common_name=None, dns_names=None, oids=None, ca=True):
     :type key: object, required.
     :param common_name: Common Name when issuing Certificate Authority cert.
     :type common_name: string, optional.
-    :param dns_names: list of DNS names to the cert.
-    :type dns_names: list of strings.
     :param oids: list of OID Objects (``cryptography.x509.oid.NameOID``)
         or None. See ``ownca.format_oids``.
     :type oids: list, required.
@@ -248,7 +241,7 @@ def issue_csr(key=None, common_name=None, dns_names=None, oids=None, ca=True):
     csr_builder = csr_builder.subject_name(x509.Name(oids))
 
     csr_builder = _add_as_subjectaltname(
-        csr_builder, common_name, dns_names, uris
+        csr_builder, common_name, **altnames
     )
 
     csr_builder = csr_builder.add_extension(
