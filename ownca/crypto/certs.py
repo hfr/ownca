@@ -67,7 +67,7 @@ def is_instance_pat(x, t):
         all(is_instance_pat(a, b) for a, b in zip(x, t))
     )
 
-def _add_as_subjectaltname(builder, c_name, **altnames):
+def _add_as_subjectaltname(builder, c_name, **san_names):
     """
     Add SANs as Subject Alternative
     Name (``cryptography.x509.SubjectAlternativeName``) to the certificate
@@ -82,7 +82,7 @@ def _add_as_subjectaltname(builder, c_name, **altnames):
     """
     x509_names = []
 
-    for kind, items  in altnames.items():
+    for kind, items  in san_names.items():
         if not items:
             continue
 
@@ -143,7 +143,7 @@ def issue_cert(
     common_name=None,
     host=False,
     ca=True,
-    **altnames,
+    **san_names,
 ):
     """
     Issue a new certificate
@@ -188,7 +188,7 @@ def issue_cert(
         )
 
         builder = _add_as_subjectaltname(
-            builder, ca_common_name, **altnames
+            builder, ca_common_name, **san_names
         )
 
     else:
@@ -197,7 +197,7 @@ def issue_cert(
             x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])
         )
 
-        builder = _add_as_subjectaltname(builder, common_name, **altnames)
+        builder = _add_as_subjectaltname(builder, common_name, **san_names)
 
     builder = builder.not_valid_before(datetime.datetime.today() - one_day)
     builder = builder.not_valid_after(
@@ -217,7 +217,7 @@ def issue_cert(
     return _valid_cert(certificate)
 
 
-def issue_csr(key=None, common_name=None, ca=True, **altnames):
+def issue_csr(key=None, common_name=None, ca=True, **san_names):
     """
     Issue a new CSR (Certificate Signing Request)
 
@@ -241,7 +241,7 @@ def issue_csr(key=None, common_name=None, ca=True, **altnames):
     csr_builder = csr_builder.subject_name(x509.Name(oids))
 
     csr_builder = _add_as_subjectaltname(
-        csr_builder, common_name, **altnames
+        csr_builder, common_name, **san_names
     )
 
     csr_builder = csr_builder.add_extension(
