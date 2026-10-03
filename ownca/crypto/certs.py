@@ -217,7 +217,7 @@ def issue_cert(
     return _valid_cert(certificate)
 
 
-def issue_csr(key=None, common_name=None, ca=True, **san_names):
+def issue_csr(key=None, common_name=None, oids=None, ca=True, **san_names):
     """
     Issue a new CSR (Certificate Signing Request)
 
