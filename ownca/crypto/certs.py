@@ -56,7 +56,7 @@ SANs = {
     "uris": (x509.UniformResourceIdentifier, str),
     "dir_names": (x509.DirectoryName, x509.Name),
     "rfc_names": (x509.RFC822Name, str),
-    "ip_addrs": (x509.IPAddress, ‎IPAddress),
+    "ip_addrs": (x509.IPAddress, IPAddress),
     "reg_ids": (x509.RegisteredID, x509.ObjectIdentifier),
     "others": (x509.OtherName, tuple, (x509.ObjectIdentifier, bytes)),
 }
