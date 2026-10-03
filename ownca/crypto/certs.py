@@ -8,7 +8,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.x509.oid import NameOID
-from ‎ipaddress import _BaseAddress as IPAddress
+from ipaddress import _BaseAddress as IPAddress
 import datetime
 import uuid
 
